@@ -28,8 +28,8 @@ namespace LinuxPartsFinder;
 public partial class MainWindow : Window
 {
     // ==== THE version number - change it here for each release (to match the vX.Y.Z tag Release.bat makes) ====
-    public const string AppVersion = "V1.0.0";
-    private const string TitleSuffix = "(Free for Non-Commercial Use • Support LinuxPartsFinder - see About)";
+    public const string AppVersion = "V1.0.1";
+    private const string TitleSuffix = "(Free for Non-Commercial Use • Support Linux-PartsFinder - see About)";
 
     private AppSettings _settings;
     private List<Supplier> _suppliers = new();
@@ -62,7 +62,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _settings = AppSettings.Load();
-        Title = $"LinuxPartsFinder - {AppVersion}      {TitleSuffix}";
+        Title = $"Linux-PartsFinder - {AppVersion}      {TitleSuffix}";
         if (Application.Current != null)
             Application.Current.RequestedThemeVariant = AppThemes.Variant(_settings.AppTheme);
 
@@ -2208,7 +2208,7 @@ public partial class MainWindow : Window
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Export CSV",
-            SuggestedFileName = $"LinuxPartsFinder {safeName} {DateTime.Now:yyyy-MM-dd HHmm}.csv",
+            SuggestedFileName = $"Linux-PartsFinder {safeName} {DateTime.Now:yyyy-MM-dd HHmm}.csv",
             DefaultExtension = "csv",
             FileTypeChoices = new[] { new FilePickerFileType("CSV file") { Patterns = new[] { "*.csv" } } }
         });

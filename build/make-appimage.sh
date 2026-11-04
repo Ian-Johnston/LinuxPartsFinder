@@ -30,7 +30,7 @@ chmod +x "$APPDIR/AppRun"
 cat > "$APPDIR/linuxpartsfinder.desktop" <<EOF
 [Desktop Entry]
 Type=Application
-Name=LinuxPartsFinder
+Name=Linux-PartsFinder
 Comment=Search electronic component suppliers at once and compare stock and prices
 Exec=LinuxPartsFinder
 Icon=linuxpartsfinder
