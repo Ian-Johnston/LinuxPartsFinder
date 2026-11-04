@@ -1,0 +1,31 @@
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+
+namespace LinuxPartsFinder;
+
+public partial class AboutWindow : Window
+{
+    private const string DonateUrl =
+        "https://www.paypal.com/donate/?business=ian%40ianj.net&no_recurring=0&item_name=Support+LinuxPartsFinder&currency_code=GBP";
+
+    public AboutWindow()
+    {
+        InitializeComponent();
+        lblVersion.Text = "Version Number: " + MainWindow.AppVersion.TrimStart('V', 'v'); // "V1.0.5" shows as 1.0.5
+    }
+
+    private void Link_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Control { Tag: string url }) WebHelper.OpenInBrowser(url);
+    }
+
+    private void BtnDonate_Click(object? sender, RoutedEventArgs e)
+    {
+        WebHelper.OpenInBrowser(DonateUrl);
+    }
+
+    private void BtnClose_Click(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+}

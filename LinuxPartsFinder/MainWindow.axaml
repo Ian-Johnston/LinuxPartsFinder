@@ -1,0 +1,377 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:LinuxPartsFinder"
+        x:Class="LinuxPartsFinder.MainWindow"
+        Width="1313" Height="742" MinWidth="800" MinHeight="400"
+        WindowStartupLocation="CenterScreen"
+        Title="LinuxPartsFinder">
+
+    <Window.Styles>
+        <Style Selector="DockPanel#toolbar > :is(Control), WrapPanel#toolbarLeft > :is(Control)">
+            <Setter Property="Margin" Value="0,2,4,2" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="DockPanel#toolbar Button">
+            <Setter Property="Padding" Value="8,3" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <!-- Tick boxes: each label close to its own box, and clear space before the next box, so it's obvious which goes with which -->
+        <Style Selector="WrapPanel#toolbarLeft > CheckBox">
+            <Setter Property="Margin" Value="8,2,6,2" />
+            <Setter Property="Padding" Value="5,0,0,0" />
+            <Setter Property="MinWidth" Value="0" />
+        </Style>
+        <Style Selector="NumericUpDown#nudMax TextBox">
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Padding" Value="6,2,2,2" />
+        </Style>
+        <Style Selector="DataGridCell.right">
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
+        <Style Selector="HyperlinkButton">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <!-- Results colours, as in WinPartsFinder: website-link rows blue italic, no stock grey, stock green, # quieter -->
+        <Style Selector="DataGridCell.muted">
+            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+        </Style>
+        <Style Selector="DataGridRow.link DataGridCell">
+            <Setter Property="Foreground" Value="{DynamicResource LinkTextBrush}" />
+            <Setter Property="FontStyle" Value="Italic" />
+        </Style>
+        <Style Selector="DataGridRow.nostock DataGridCell">
+            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+        </Style>
+        <Style Selector="DataGridRow.instock DataGridCell.stock">
+            <Setter Property="Foreground" Value="{DynamicResource GoodTextBrush}" />
+        </Style>
+        <!-- "Prices in GBP": converted prices (Price, Cur, Price breaks) in their own colour, so they read as estimates;
+             hover for the supplier's own price and the rate used -->
+        <Style Selector="DataGridRow.conv DataGridCell.price">
+            <Setter Property="Foreground" Value="{DynamicResource ConvertedTextBrush}" />
+        </Style>
+        <Style Selector="DataGrid#gridResults DataGridCell.price" x:DataType="local:ResultRow">
+            <Setter Property="ToolTip.Tip" Value="{Binding PriceTip}" />
+        </Style>
+        <!-- A package borrowed from another supplier's listing of the same part (Mouser doesn't give one), in orange;
+             hover to see whose it is -->
+        <Style Selector="DataGridRow.borrowedpkg DataGridCell.pkg">
+            <Setter Property="Foreground" Value="{DynamicResource BorrowedTextBrush}" />
+        </Style>
+        <Style Selector="DataGrid#gridResults DataGridCell.pkg" x:DataType="local:ResultRow">
+            <Setter Property="ToolTip.Tip" Value="{Binding PackageTip}" />
+        </Style>
+
+        <!-- Supplier list: suppliers with no key are greyed; the tooltip says how the search went -->
+        <Style Selector="DataGridRow.unconfigured DataGridCell">
+            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+        </Style>
+        <Style Selector="DataGrid#gridSuppliers DataGridRow" x:DataType="local:SupplierRow">
+            <Setter Property="ToolTip.Tip" Value="{Binding Tip}" />
+        </Style>
+        <Style Selector="DataGrid#gridSuppliers CheckBox">
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="2,0,0,0" />
+            <Setter Property="Foreground" Value="{Binding $parent[DataGridCell].Foreground}" />
+        </Style>
+
+        <!-- Supplier list and the filters under it: compact tick boxes. The template fixes the box at 20 x 20 (a style
+             can't change that), so it's drawn at 70% = 14 x 14 instead; the 13px text and 20-high tick box rows come from
+             the resources on gridLeft. -->
+        <Style Selector="Grid#gridLeft CheckBox /template/ Border#NormalRectangle">
+            <Setter Property="RenderTransform" Value="scale(0.7)" />
+        </Style>
+        <Style Selector="Grid#gridLeft CheckBox /template/ Viewbox">
+            <Setter Property="RenderTransform" Value="scale(0.7)" />
+        </Style>
+        <Style Selector="StackPanel#pnlFilters CheckBox">
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="2,0,0,0" />
+        </Style>
+        <Style Selector="Grid#gridStatusRows TextBox">
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="4,1" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Grid#gridStatusRows TextBlock.tick">
+            <Setter Property="Foreground" Value="{DynamicResource GoodTextBrush}" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="6,0,0,0" />
+        </Style>
+
+        <!-- Thin frame round the supplier list and the results -->
+        <Style Selector="Border.frame">
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+        </Style>
+        <!-- The pull-tab that hides and shows the supplier list: header colours, the list's hover colour under the mouse -->
+        <Style Selector="Border#bdrCollapse">
+            <Setter Property="Background" Value="{DynamicResource DataGridColumnHeaderBackgroundBrush}" />
+        </Style>
+        <!-- The hover colour is see-through, so it goes on an inner layer over the solid header colour -->
+        <Style Selector="Border#bdrCollapse:pointerover > Border">
+            <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
+        </Style>
+
+        <!-- Results row lines: drawn under each real column's cells (class "gl", added in code), so they stop at the
+             last column like WinPartsFinder's - the grid's own row line runs on across the empty space to the right. -->
+        <Style Selector="DataGrid#gridResults DataGridCell.gl">
+            <!-- No 32px minimum (the theme's): website-link rows are only 22px, and a taller cell hides its line -->
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Setter Property="BorderBrush" Value="{Binding $parent[DataGrid].HorizontalGridLinesBrush}" />
+        </Style>
+        <!-- Same for the line under the headers: the grid's own runs the full width, so it's swapped for one under each
+             real header (the blank filler header to the right of the last column is :disabled, so it gets none). -->
+        <Style Selector="DataGrid#gridResults /template/ Rectangle#PART_ColumnHeadersAndRowsSeparator">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="DataGrid#gridResults DataGridColumnHeader:not(:disabled) /template/ Rectangle#HeaderLine">
+            <Setter Property="IsVisible" Value="True" />
+        </Style>
+        <!-- The blank filler header to the right of the last column: not drawn, so the headers end where the columns do -->
+        <Style Selector="DataGrid#gridResults DataGridColumnHeader:disabled">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="AreSeparatorsVisible" Value="False" />
+        </Style>
+
+        <!-- Suggestions while typing: never take the keyboard from the Search box -->
+        <Style Selector="ListBox#lstSuggest ListBoxItem">
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="MinHeight" Value="0" />
+        </Style>
+    </Window.Styles>
+
+    <DockPanel>
+        <!-- Toolbar: same order as WinPartsFinder -->
+        <DockPanel x:Name="toolbar" DockPanel.Dock="Top" Margin="6,4,6,2">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Top" Margin="6,2,0,2">
+                <Button x:Name="btnHelp" Content="Help" Click="BtnHelp_Click" ToolTip.Tip="How to use LinuxPartsFinder." />
+                <Button x:Name="btnAbout" Content="About" Click="BtnAbout_Click" ToolTip.Tip="Version, credits, licence and donate." />
+            </StackPanel>
+            <WrapPanel x:Name="toolbarLeft">
+                <TextBlock Text="Search:" />
+                <ComboBox x:Name="cboSearch" Width="190" IsEditable="True" MaxDropDownHeight="520"
+                          ToolTip.Tip="Part number or keywords to search for. Press Enter to search.&#10;Click the arrow (or press Alt+↓) to pick one of your last 30 searches; matching ones are also suggested as you type." />
+                <ComboBox x:Name="cboMode" Width="145"
+                          ToolTip.Tip="Keyword: searches descriptions and part numbers.&#10;Manufacturer part no.: looks for parts whose manufacturer part number starts with what you typed." />
+                <TextBlock Text="Max/supp.:" />
+                <NumericUpDown x:Name="nudMax" Width="92" Minimum="1" Maximum="50" Increment="1" FormatString="0"
+                               ToolTip.Tip="How many results to fetch from each supplier per search, and per Load more (up to 50).&#10;Fewer is faster. Each search or Load more uses one call of each supplier's daily API allowance." />
+                <Button x:Name="btnSearch" Content="Search" IsDefault="True" Click="BtnSearch_Click"
+                        ToolTip.Tip="Search every ticked supplier at once (Enter)." />
+                <Button x:Name="btnAdvanced" Content="Advanced" Click="BtnAdvanced_Click"
+                        ToolTip.Tip="Advanced search (Ctrl+F): exact part number, supplier order code,&#10;RoHS, maker, part of a part no., quantity pricing, max price…" />
+                <Button x:Name="btnCancel" Content="Cancel" IsEnabled="False" Click="BtnCancel_Click"
+                        ToolTip.Tip="Stop any searches still running." />
+                <Button x:Name="btnLoadMore" Content="Load more" IsEnabled="False" Click="BtnLoadMore_Click"
+                        ToolTip.Tip="Fetch the next batch (Max/supp.) from every ticked supplier that has more - see Hits, e.g. 50 / 312.&#10;Uses one API call per supplier. New rows are added at the end and selected - click the Supplier header to group them.&#10;Right-click a supplier to load more from just that one." />
+                <Button x:Name="btnTypes" Content="Types" IsEnabled="False" Click="BtnTypes_Click" Margin="8,2,4,2"
+                        ToolTip.Tip="After a search: tick or untick part types (categories) to show or hide them,&#10;e.g. hide Evaluation Kit and Flip-Flops. A new search shows every type again." />
+                <TextBlock Text="Filter:" />
+                <TextBox x:Name="txtFilter" Width="120" PlaceholderText="narrow results…" TextChanged="TxtFilter_TextChanged"
+                         ToolTip.Tip="Narrow the current results as you type.&#10;Matches supplier, supplier part no., mfr part no., manufacturer and description." />
+                <Button x:Name="btnExport" Content="Export CSV" Click="BtnExport_Click"
+                        ToolTip.Tip="Save the rows currently shown to a CSV file (opens in LibreOffice Calc or Excel)." />
+                <Button x:Name="btnAddToBom" Content="Add to BOM" IsEnabled="False" Click="AddToBom_Click"
+                        ToolTip.Tip="Add the selected parts to the BOM (or right-click them > Add to BOM)." />
+                <!-- Text set in code: BOM (5)… -->
+                <Button x:Name="btnBom" Content="BOM (0)" Click="BtnBom_Click"
+                        ToolTip.Tip="Show the BOM: the parts you've added, with quantities, totals and links for buying." />
+                <Button x:Name="btnSettings" Content="Settings" Click="BtnSettings_Click"
+                        ToolTip.Tip="API keys, supplier search URLs, your own suppliers, photos, dark mode and window layout." />
+            </WrapPanel>
+
+            <!-- Earlier searches suggested while typing, dropped down under the Search box (placed in code) -->
+            <Popup x:Name="popSuggest" Placement="BottomEdgeAlignedLeft" IsLightDismissEnabled="False">
+                <Border BorderBrush="Gray" BorderThickness="1">
+                    <ListBox x:Name="lstSuggest" Focusable="False" MaxHeight="420"
+                             Tapped="LstSuggest_Tapped" PointerMoved="LstSuggest_PointerMoved" />
+                </Border>
+            </Popup>
+        </DockPanel>
+
+        <!-- Status bar, with a thin line above it -->
+        <Border DockPanel.Dock="Bottom" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+            <DockPanel Margin="8,3,8,4">
+                <TextBlock x:Name="lblTotal" DockPanel.Dock="Right" Text="Total parts = 0" Margin="12,0,0,0" />
+                <TextBlock x:Name="lblStatus" Text="Ready" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+        </Border>
+
+        <!-- Supplier list and results, each in its own frame with the divider between (as in WinPartsFinder) -->
+        <Grid x:Name="gridMain" ColumnDefinitions="375,5,*">
+            <!-- Left: supplier list on top, the show/hide filters below, with a divider between -->
+            <Grid x:Name="gridLeft" Grid.Column="0" RowDefinitions="300,5,*">
+            <!-- Compact: 13px text and tick boxes in 20-high rows, not Fluent's 14px and 32
+                 (20 = the template's box, so its outline isn't cut off) -->
+            <Grid.Resources>
+                <x:Double x:Key="ControlContentThemeFontSize">13</x:Double>
+                <x:Double x:Key="CheckBoxMinHeight">20</x:Double>
+            </Grid.Resources>
+            <!-- Supplier list -->
+            <Border Grid.Row="0" Classes="frame">
+            <DataGrid x:Name="gridSuppliers" IsReadOnly="True" CanUserSortColumns="False" CanUserResizeColumns="True"
+                      SelectionMode="Single" HeadersVisibility="Column" GridLinesVisibility="Horizontal" RowHeight="22" FontSize="13"
+                      LoadingRow="GridSuppliers_LoadingRow" DoubleTapped="GridSuppliers_DoubleTapped">
+                <DataGrid.ContextMenu>
+                    <ContextMenu x:Name="cmsSuppliers" Opening="CmsSuppliers_Opening">
+                        <MenuItem x:Name="mnuLoadMoreSupplier" Header="Load more" Click="MnuLoadMoreSupplier_Click" />
+                        <Separator />
+                        <MenuItem x:Name="mnuOpenSupplierSearch" Header="Open search on this supplier's website" Click="MnuOpenSupplierSearch_Click" />
+                        <MenuItem x:Name="mnuOpenAllSearches" Header="Open search on all ticked websites" Click="MnuOpenAllSearches_Click" />
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+                <DataGrid.Columns>
+                    <!-- Widths allow for a slightly wider font: "No matches", "50 / 312" and "6.7s" all show in full -->
+                    <DataGridTemplateColumn Header="Supplier" Width="93">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="local:SupplierRow">
+                                <CheckBox IsChecked="{Binding IsChecked}" Margin="6,0,0,0">
+                                    <!-- One line: a long name is cut short (RS Compo…) rather than wrapping -
+                                         the tick box's template would otherwise wrap it onto a second line -->
+                                    <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                </CheckBox>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Mode" Binding="{Binding ModeText}" x:DataType="local:SupplierRow" Width="84" />
+                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" x:DataType="local:SupplierRow" Width="59" />
+                    <DataGridTextColumn Header="Hits" Binding="{Binding Hits}" x:DataType="local:SupplierRow" Width="86" CellStyleClasses="right" />
+                    <DataGridTextColumn Header="Time" Binding="{Binding Time}" x:DataType="local:SupplierRow" Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+            </Border>
+
+            <GridSplitter Grid.Row="1" ResizeDirection="Rows" Background="Transparent" />
+
+            <!-- Filters: hide rows in the current results straight away. Same background as the supplier list in every
+                 theme - the text boxes' outlines mark the rows. Scrolls when they don't all fit. -->
+            <Border Grid.Row="2" Classes="frame" Background="{Binding #gridSuppliers.Background}">
+                <ScrollViewer x:Name="svFilters" HorizontalScrollBarVisibility="Disabled" FontSize="13">
+                    <StackPanel x:Name="pnlFilters" Margin="6,4,6,6" Spacing="1">
+                        <CheckBox x:Name="chkInStock" Content="In stock only" IsCheckedChanged="ChkInStock_Changed"
+                                  ToolTip.Tip="Hide parts with no stock. Website-link rows always stay." />
+                        <!-- Text set in code: "Prices in GBP" etc. -->
+                        <CheckBox x:Name="chkConvert" Content="Prices in GBP" IsCheckedChanged="ChkConvert_Changed"
+                                  ToolTip.Tip="Show every price in one currency (choose it in Settings), using the European Central Bank's daily exchange rates.&#10;Converted prices are purple - hover over one to see the supplier's own price. They're approximate.&#10;Rates are fetched at most every 12 hours." />
+                        <CheckBox x:Name="chkActive" Content="Active parts only" IsCheckedChanged="ChkInStock_Changed"
+                                  ToolTip.Tip="Hide parts whose Status says obsolete, discontinued, not recommended for new designs,&#10;end of life, last time buy or no longer… Parts with no Status stay." />
+                        <TextBlock x:Name="lblStatusFilters" Text="Hide parts whose Status contains:" Margin="0,6,0,2"
+                                   ToolTip.Tip="Tick a row to hide every part whose Status contains that text (capitals don't matter).&#10;Type it as the supplier writes it - e.g. NO_LONGER_STOCKED and No Longer Stocked are different.&#10;Parts with no Status, and website-link rows, always stay." />
+                        <!-- The status filter rows (tick box, text box, ✓ when that row is hiding parts) are added in code -->
+                        <Grid x:Name="gridStatusRows" ColumnDefinitions="Auto,Auto,*" RowSpacing="1" />
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+            </Grid>
+
+            <GridSplitter x:Name="splitMain" Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+
+            <!-- Results -->
+            <Border Grid.Column="2" Classes="frame">
+            <DataGrid x:Name="gridResults" IsReadOnly="True" SelectionMode="Extended"
+                      CanUserReorderColumns="True" CanUserResizeColumns="True" CanUserSortColumns="True"
+                      FrozenColumnCount="1" HeadersVisibility="Column" GridLinesVisibility="Vertical"
+                      Sorting="GridResults_Sorting" LoadingRow="GridResults_LoadingRow" DoubleTapped="GridResults_DoubleTapped" KeyDown="GridResults_KeyDown"
+                      SelectionChanged="GridResults_SelectionChanged">
+                <DataGrid.ContextMenu>
+                    <ContextMenu x:Name="cmsResults" Opening="CmsResults_Opening">
+                        <!-- Header set in code: Add 3 rows to BOM -->
+                        <MenuItem x:Name="mnuAddToBom" Header="Add to BOM" Click="AddToBom_Click" />
+                        <Separator />
+                        <MenuItem x:Name="mnuOpenProduct" Header="Open product page" Click="MnuOpenProduct_Click" />
+                        <MenuItem x:Name="mnuOpenDatasheet" Header="Open datasheet" Click="MnuOpenDatasheet_Click" />
+                        <Separator />
+                        <MenuItem x:Name="mnuCopyMpn" Header="Copy manufacturer part no." Click="MnuCopyMpn_Click" />
+                        <MenuItem x:Name="mnuCopySupplierPart" Header="Copy supplier part no." Click="MnuCopySupplierPart_Click" />
+                        <MenuItem x:Name="mnuCopyRow" Header="Copy row" Click="MnuCopyRow_Click" />
+                        <Separator />
+                        <MenuItem x:Name="mnuRemoveRows" Header="Remove from results" InputGesture="Delete" Click="MnuRemoveRows_Click" />
+                        <MenuItem x:Name="mnuRestoreRows" Header="Restore removed rows" Click="MnuRestoreRows_Click" />
+                        <Separator x:Name="mnuSep3" />
+                        <!-- Header set in code, e.g. Hide parts with Status "Obsolete" -->
+                        <MenuItem x:Name="mnuHideStatus" Header="Hide parts with this Status" Click="MnuHideStatus_Click"
+                                  ToolTip.Tip="Put this part's exact Status in the next empty row under the supplier list, and tick it.&#10;If a row already has it, that row is just ticked." />
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Tag="No" Header="#" Binding="{Binding No}" x:DataType="local:ResultRow" Width="42"
+                                        CellStyleClasses="right muted" CanUserReorder="False" />
+                    <DataGridTemplateColumn Tag="Thumb" Header="" Width="43" CanUserSort="False" CanUserResize="False">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="local:ResultRow">
+                                <Border Width="35" Height="35" Background="White" BorderBrush="Silver" BorderThickness="1"
+                                        IsVisible="{Binding !LinkOnly}"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                        Classes="thumb" Cursor="Hand" Tapped="Thumb_Tapped" ToolTip.Tip="Click for a bigger photo">
+                                    <Panel>
+                                        <Image Source="{Binding Thumb}" Margin="1" Stretch="Uniform" />
+                                        <Path IsVisible="{Binding NoPhoto}" Data="M 8,8 L 25,25 M 25,8 L 8,25"
+                                              Stroke="LightGray" StrokeThickness="1.5" />
+                                    </Panel>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Tag="Supplier" Header="Supplier" Binding="{Binding Supplier}" x:DataType="local:ResultRow" Width="90"
+                                        SortMemberPath="SupplierRank" />
+                    <DataGridTemplateColumn Tag="SupplierPartNo" Header="Supplier part no." Width="104" SortMemberPath="SupplierPartNo">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="local:ResultRow">
+                                <HyperlinkButton Content="{Binding SupplierPartText}" IsVisible="{Binding HasProductLink}"
+                                                 Click="ProductLink_Click" Margin="4,0" ToolTip.Tip="Click to open the product page" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Tag="MfrPartNo" Header="Mfr part no." Binding="{Binding MfrPartNo}" x:DataType="local:ResultRow" Width="140" />
+                    <DataGridTextColumn Tag="Manufacturer" Header="Manufacturer" Binding="{Binding Manufacturer}" x:DataType="local:ResultRow" Width="110" />
+                    <DataGridTextColumn Tag="Type" Header="Type" Binding="{Binding Type}" x:DataType="local:ResultRow" Width="160" />
+                    <DataGridTextColumn Tag="Description" Header="Description" Binding="{Binding Description}" x:DataType="local:ResultRow" Width="280" />
+                    <DataGridTextColumn Tag="Package" Header="Package" Binding="{Binding Package}" x:DataType="local:ResultRow" Width="80"
+                                        CellStyleClasses="pkg" />
+                    <DataGridTextColumn Tag="Stock" Header="Stock" Binding="{Binding Stock, StringFormat='{}{0:#,##0}'}" x:DataType="local:ResultRow"
+                                        Width="55" CellStyleClasses="right stock" />
+                    <DataGridTextColumn Tag="UnitPrice" Header="Price (1)" Binding="{Binding UnitPrice, StringFormat='{}{0:#,##0.00##}'}"
+                                        x:DataType="local:ResultRow" Width="64" CellStyleClasses="right price" />
+                    <!-- MinWidth also widens a narrower width saved by an earlier version, so GBP etc. show in full -->
+                    <DataGridTextColumn Tag="Currency" Header="Cur" Binding="{Binding Currency}" x:DataType="local:ResultRow" Width="52" MinWidth="50"
+                                        CellStyleClasses="price" />
+                    <DataGridTextColumn Tag="PriceBreaks" Header="Price breaks" Binding="{Binding PriceBreaks}" x:DataType="local:ResultRow" Width="220"
+                                        CellStyleClasses="price" />
+                    <DataGridTextColumn Tag="MOQ" Header="MOQ" Binding="{Binding Moq}" x:DataType="local:ResultRow" Width="48" CellStyleClasses="right" />
+                    <DataGridTextColumn Tag="Availability" Header="Availability / lead" Binding="{Binding Availability}" x:DataType="local:ResultRow" Width="110" />
+                    <DataGridTemplateColumn Tag="Datasheet" Header="Datasheet" Width="75" SortMemberPath="DatasheetUrl">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="local:ResultRow">
+                                <HyperlinkButton Content="Datasheet" IsVisible="{Binding HasDatasheet}" Click="DatasheetLink_Click"
+                                                 Margin="4,0" ToolTip.Tip="{Binding DatasheetUrl}" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Tag="Status" Header="Status" Binding="{Binding Status}" x:DataType="local:ResultRow" Width="60"
+                                        CellStyleClasses="status" />
+                </DataGrid.Columns>
+            </DataGrid>
+            </Border>
+
+            <!-- A pull-tab halfway down the divider, sticking out over the edge of the results: hides the supplier list
+                 and filters (the results then fill the window) and brings them back. Arrow and tooltip set in code. -->
+            <Border x:Name="bdrCollapse" Grid.Column="1" Grid.ColumnSpan="2" Width="14" Height="46"
+                    HorizontalAlignment="Left" VerticalAlignment="Center" Cursor="Hand"
+                    CornerRadius="0,6,6,0" BorderThickness="0,1,1,1"
+                    BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                    PointerPressed="BdrCollapse_PointerPressed">
+                <Border CornerRadius="0,5,5,0" Background="Transparent">
+                    <Path x:Name="pathCollapse" Fill="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

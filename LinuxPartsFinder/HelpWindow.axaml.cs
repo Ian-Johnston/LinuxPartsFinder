@@ -1,0 +1,292 @@
+// pop-up help window
+
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Documents;
+using Avalonia.Interactivity;
+using Avalonia.Media;
+
+namespace LinuxPartsFinder;
+
+public partial class HelpWindow : Window
+{
+    // Help text. Simple markup, turned into formatted text by ShowContent():
+    //   # Heading       - bold heading
+    //   - text          - bullet point
+    //   **word**        - bold, inside any line
+    //   (blank line)    - paragraph gap
+    private const string HelpContent = @"
+# GETTING STARTED
+LinuxPartsFinder searches several component suppliers at once and puts stock, prices, minimum order and lifecycle status side by side in one grid. It's the Linux edition of WinPartsFinder.
+
+- Click **Settings** and enter your API keys - click **API Help** in Settings for step-by-step instructions. Without keys, suppliers still appear as website links.
+- Type a part number or some keywords in the **Search** box, e.g. LM358 or 100nF 50V 0603, and press **Enter**.
+- Results arrive from each supplier as soon as it answers. Click any column header to sort, e.g. by Price or Stock.
+
+# API KEYS
+Mouser, DigiKey, element14 (Farnell, CPC + Newark) and TME have free APIs, and each user needs their own keys. The step-by-step instructions for getting them are in a separate window: click **Settings**, then **API Help**. It can stay open beside Settings while you paste the keys in.
+
+# SEARCHING
+- **Keyword** searches descriptions and part numbers. **Manufacturer part no.** looks for parts whose manufacturer part number starts with what you typed.
+- Keyword searches are matched by each supplier's own search, so a part number can also bring back its close relatives - e.g. LT1121CST-3.3**#PBF** also finds the **#TRPBF** (tape and reel) version of the same chip. Use **Advanced > Exact manufacturer part no.** for only that exact number.
+- **Max/supp.** is how many results are fetched from each supplier per search, up to 50. Suppliers don't send more than 50 at a time - use **Load more** for the next batch.
+- **Cancel** stops any searches still running.
+- **Recent searches:** click the **arrow** at the right of the Search box (or press **Alt+↓**) to see your last 30 searches. Click one to put it in the box - change the search type or edit it if you like, then press **Return** or click **Search**. **Esc** closes the list.
+- As you type, matching previous searches are also suggested.
+
+# ADVANCED SEARCH
+Click **Advanced** next to Search, or press **Ctrl+F**. While LinuxPartsFinder is open, the window remembers your choices from last time; each time you start the app it begins fresh. Results go into the same grid, and the bottom status line lists the Advanced options used. A plain **Search** afterwards goes back to normal.
+- **Search type:** **Keyword**; **Manufacturer part no. (starts with)**; **Exact manufacturer part no.** (only parts whose number matches exactly, ignoring spaces); or **Supplier order code**, e.g. a Farnell 3117070 or Mouser 595-LM358DR. A code belongs to one supplier: LinuxPartsFinder finds it there, reads the manufacturer part number, then searches every other ticked supplier for that exact part.
+- **In stock only** and **RoHS compliant only** are passed to each supplier's own search, so you get a full batch of matching parts. TME has no RoHS option, so it ignores that box. (**In stock only** on the main window is different: it only hides out-of-stock rows already found.)
+- **Active parts only** is under the supplier list on the main window (see **The filters under the supplier list**).
+- **Manufacturer name contains**, e.g. Texas, keeps only that maker's parts. It's the maker's name, not the part number.
+- **Manufacturer part no. contains** keeps parts whose manufacturer part number contains what you type anywhere in it, e.g. **931G** keeps KSC931G LFS. If you only remember part of a number, leave **Search for** blank, put the fragment here and what the part is in **Description contains** (e.g. 931G and switch) - they're searched for together. DigiKey and Mouser can find part of a number; Farnell, CPC and Newark only match whole part numbers or numbers from the start, so search those once you know the full number.
+- **Description contains** keeps parts whose description or part number has every word you type. Suppliers word things differently - DigiKey says 2 CIRCUIT rather than dual, for example. Leave **Search for** blank to search for these words (plus any manufacturer part no. fragment) instead, as a Keyword search, e.g. 20-Bit ADC. The suppliers then match the words their own way (DigiKey finds 20-Bit as 20BIT), so they aren't also checked letter-for-letter in the description.
+- **Quantity needed** shows the price each at that quantity (the column header changes to e.g. **Price (100)**) and hides parts whose minimum order is more than that.
+- **Max price each** hides parts dearer than that at your quantity (or at 1). Parts with no price listed are hidden too. Prices are compared in each supplier's own currency - or in your chosen currency when **Prices in** is ticked.
+- **Suppliers** sets which suppliers are searched; the supplier list on the left changes to match.
+- The options from **Manufacturer name contains** down are applied by LinuxPartsFinder after each batch arrives, so a supplier's **Hits** can be lower than the batch size. Hover over the supplier to see how many were left out. Load more and newly ticked suppliers use the same options.
+- **Clear** resets everything except the search text. **Cancel** closes the window without searching.
+
+# THE SUPPLIER LIST
+- Tick the suppliers to search. Your choice is remembered.
+- After a search, **untick** a supplier to hide its rows straight away, and **tick** it again to bring them back. Nothing is lost until the next search.
+- Ticking a supplier that **wasn't part of the search** searches just that supplier straight away and adds its results at the end.
+- **Mode** shows how each supplier is searched: **API** (live data), **API (no key)** (add a key in Settings), or **Web link**.
+- **Status**, **Hits** and **Time** show how each search went. If it says **Error**, hover over the supplier to see why.
+- **Hits** like **50 / 312** means 50 shown out of 312 the supplier has, so Load more is available. Once everything has been fetched it shows just the count, which can be a little under the supplier's total: suppliers sometimes send the same part twice, and repeats are skipped (hover over the supplier to see how many).
+- **Hover over a supplier** for a breakdown of its Hits: how many parts match at that supplier, how many have been fetched so far, how many are shown, how many the Advanced search filters left out, and how many are still to fetch with **Load more**. With Advanced filters a low number like **0 / 347** usually just means none of the batches fetched so far passed them - **No more** in the Status column means the last Load more added nothing new, not that the supplier has run out.
+- **Not searched yet** means the supplier was ticked while a search was running. Press **Search** again to include it.
+- Double-click a supplier, or right-click it, to open the same search on that supplier's website.
+
+# THE FILTERS UNDER THE SUPPLIER LIST
+These hide rows in the current results straight away - no new search is needed - and every setting is remembered. Drag the divider above them to give the supplier list or the filters more room. Website-link rows always stay.
+- **In stock only** hides parts with no stock.
+- **Prices in GBP** (or your chosen currency) is here too - it changes how prices are shown rather than hiding rows; see **Filtering and export**.
+- **Active parts only** hides parts whose **Status** says obsolete, discontinued, not recommended, NRND, end of life, EOL, last time, no longer or not for new. Parts with no status are kept.
+- **Hide parts whose Status contains:** 20 rows, each a tick box and a box for some text. Tick a row to hide every part whose **Status** contains that text anywhere in it. Capitals don't matter, but otherwise type it exactly as it appears in the Status column - suppliers word the same thing in different ways, even within one supplier (e.g. NO_LONGER_STOCKED and No Longer Stocked are different), so add a row for each wording you see.
+- The easy way to add one: **right-click a Status cell** in the results and choose **Hide parts with Status ""…""**. Its exact text goes into the first empty row, ticked (or, if a row already has it, that row is ticked).
+- The first 8 rows start filled in with common wordings (Obsolete, NO_LONGER_MANUFACTURED, End of Life and so on), all unticked. Change them or fill in the empty rows with your own.
+- A green **✓** beside a ticked row means it is hiding at least one part in the current results - hover over it to see how many. (A part can match more than one row, so the numbers can add up to more than are hidden.)
+- Editing the text of a ticked row re-filters as you type. A row with no text can't be ticked; clearing a ticked row's text unticks it when you move to another box.
+- Parts with no status are never hidden by these rows. Only API suppliers (Mouser, DigiKey, Farnell, CPC, Newark, TME) send a status.
+
+# THE RESULTS
+- **#** numbers each row so you can note a part and find it again. Numbers are given when a search finishes and never change - removing, filtering or sorting rows leaves them as they are. Click **#** to sort by it. A new search starts again from 1; Load more carries on from the last number. Website-link rows aren't parts, so they have no number - the last # always matches **Total parts** in the bottom-right corner.
+- **Stock** is green when in stock. Rows with no stock are greyed out.
+- **Price (1)** is the price each at the lowest price break, usually quantity 1 (after an Advanced search with a quantity, the price at that quantity). With **Prices in** ticked it shows e.g. **Price (1) GBP**, and converted prices (and their **Cur** and **Price breaks**) are purple. **Price breaks** lists every break as quantity+ price.
+- **Datasheet** opens the part's datasheet in your browser (hover to see the link). It's blank when the supplier didn't send one - TME and the website-link suppliers never do.
+- **Type** is the kind of part, in the supplier's own words: Mouser, DigiKey and TME send a category; for Farnell, CPC and Newark it's taken from the product name. Website-link rows have none.
+- **Package** is the package or case, e.g. 8-SOIC, TSSOP, TO-92, 0805 - in each supplier's own wording, so the same package can be written differently (8-SOIC, SOIC, SO8). DigiKey, Farnell, CPC and Newark give it; TME's is taken from its description; Mouser's search doesn't include it, so a Mouser row borrows the package from another supplier's row with exactly the same manufacturer part number - shown in **orange**; hover over it to see whose it is. With no match it stays blank. Type e.g. SOIC in **Filter** to keep just those.
+- **MOQ** is the minimum order quantity. **Availability / lead** shows packaging and lead time. **Status** shows lifecycle, e.g. Obsolete.
+- Blue italic rows are **website links** for suppliers without an API (RS, Rapid, LCSC, AliExpress and any you add). Click them to see results on that website. They're kept as a short strip at the top of the results - however you sort - with no photo.
+- Click a **Supplier part no.** to open the product page. Double-clicking anywhere else on a row does the same.
+- Photos load in the background after the results appear. Click a **photo** for a bigger view; it stays on top until you click it or press Esc, and clicking another photo swaps it. A box with a cross means no photo is available.
+- Mouser does not allow its photos to be downloaded, so Mouser rows borrow a photo of the same part from DigiKey or Farnell when one was found.
+- Search results are grouped by supplier, in supplier-list order; rows from **Load more** are added at the end. Click a header such as **Price (1)** to sort by it (click again to reverse), **Supplier** to put each supplier's rows together, or **#** to go back to the original order.
+- **Sorting by more than one column:** click the first column, then **Shift+click** the next, e.g. click **Supplier** then Shift+click **Price (1)** for each supplier's parts cheapest first. Each sorted header shows its level, e.g. **Supplier ¹** and **Price (1) ²**; Shift+click a sorted column again to reverse just that level. A plain click goes back to sorting by one column.
+- **Right-click a header** (or Control+click) for **Sort by …**, **Next sort by …** (the same as Shift+click) and **Clear sorting**, which puts the rows back in the order they arrived.
+- Drag a column edge to resize it, or drag a header to move the column (**#** always stays first). Column layout, window size and position, and the dividers beside and below the supplier list are all remembered.
+
+# LOAD MORE
+When a supplier has more matches than it sent, its **Hits** shows e.g. **50 / 312** and **Load more** becomes available.
+- **Load more** (toolbar) fetches the next batch from every ticked supplier that has more.
+- **Right-click a supplier > Load 50 more from …** fetches the next batch from just that supplier.
+- New rows are added at the end (or into place if you've sorted by a column), and are selected so you can spot them. Click the **Supplier** header to put each supplier's rows together.
+- Each Load more uses one API call per supplier. The batch size is the **Max/supp.** number.
+- Mouser can't load more when searching by **Manufacturer part no.** A new search starts again from the first batch.
+- Advanced searches by **Exact manufacturer part no.** or **Supplier order code** never need Load more: each supplier sends just the matching part(s).
+- If what you want isn't in the first batch, a more exact search usually works better than loading more, e.g. add the package: LM358 SOIC.
+
+# RIGHT-CLICK MENU
+- **Open product page** and **Open datasheet** open the supplier's pages in your browser.
+- **Copy manufacturer / supplier part no.** copies just that number. **Copy row** copies the selected rows, including their **#**, ready to paste into LibreOffice Calc or Excel.
+- **Remove from results** (or the **Delete** key) hides parts you don't want. Select several with **Ctrl**-click or **Shift**-click, or all with **Ctrl+A**.
+- **Restore removed rows** brings them all back. Removed rows stay removed if you untick and re-tick their supplier. A new search always starts with nothing removed.
+- **Hide parts with Status ""…""** (right-click a **Status** cell) adds that status to the Status filters under the supplier list and ticks it, so every part with it is hidden.
+
+# FILTERING AND EXPORT
+- **In stock only**, **Active parts only** and the **Status** filters are under the supplier list - see **The filters under the supplier list**.
+- **Prices in GBP** (under the supplier list; the currency is chosen in Settings) shows every price in one currency, so you can compare suppliers and sort by price properly. It uses the European Central Bank's daily exchange rates, fetched when you tick it and then at most every 12 hours - the last rates are saved, so it still works offline. Converted prices are **purple** and the Price column says e.g. **Price (1) GBP**; prices already in your currency stay as they are. Hover over a purple price to see the supplier's own price and the rate used. Converted prices are approximate - the supplier's own rate, VAT and import charges will differ. Export CSV also saves the supplier's own prices.
+- **Types** lists every type of part in the results (e.g. Analogue to Digital Converter, Evaluation Kit, Flip-Flops) with how many parts and which suppliers. Untick the ones you don't want and click **OK** to hide them; tick them again to bring them back. The button shows how many types are hidden, and a new search shows every type again. Each supplier words types its own way (Farnell: Analogue to Digital Converter, Mouser: Analog to Digital Converters - ADC), so similar ones appear separately - click **Type** in the window to sort them together.
+- **Filter** narrows the current results as you type. It matches the supplier, both part numbers, manufacturer, type, package and description. It is not case sensitive.
+- **Total parts = …** in the bottom-right corner counts every part found in this search (website-link rows aren't counted). When Filter, the filters under the supplier list, Types, removed rows or unticked suppliers hide some, it adds **(showing …)** for how many you can see.
+- If parts were found but **all** of them are hidden, the status line at the bottom says what's hiding them, e.g. All 5 are hidden by In stock only (none are in stock).
+- **Export CSV** saves the rows currently shown, including their **#**, product and datasheet links, to a file that opens in LibreOffice Calc or Excel.
+
+# BOM (BILL OF MATERIALS)
+Build up a shopping list across as many searches as you like, then work down it to buy each part on the supplier's website.
+- **Adding parts:** select one or more results and click **Add to BOM** on the toolbar, or right-click them and choose **Add to BOM**. Website-link rows can't be added. Adding a part that's already in the BOM adds to its quantity instead. The quantity starts at 1 - or at the Advanced search **Quantity needed** if one is set - and never below the part's minimum order.
+- **BOM (5)** on the toolbar shows how many lines the BOM has and opens it. The BOM window can stay open while you search; closing it just hides it.
+- Each line shows the supplier, the **Supplier Part No.** (their order code) and the **Mfr Part No.**, the description, quantity, prices and a link. Each supplier's parts are kept together, so you can buy from one supplier at a time. Click **Open** (or double-click a line) to open the part's page on the supplier's website. Right-click a line to copy its supplier or manufacturer part number.
+- **Qty:** click the selected line's quantity and type a new one, or select lines and use **Qty −** / **Qty +**. The price each follows the supplier's price breaks for that quantity. Setting it to 0 asks whether to remove the line.
+- **The tick box** at the left of each line counts it in the totals. Untick a line to grey it out and leave it out of the totals (**Space** ticks or unticks the selected lines).
+- **Removing lines:** click the red **✕** at the right of a line, or select lines and click **Remove** (or press the **Delete** key). **Ctrl+Z** puts them back.
+- **Totals:** under the list are each supplier's subtotal and the **Grand total**, for ticked lines. Prices are the supplier's own from when the part was added; with **Prices in GBP** ticked they're converted (purple) and the grand total is in one currency. Otherwise each currency is totalled separately. Hover over a price to see the price breaks.
+- **BOM name** and **Notes** are saved with the BOM. The title bar shows the name, with a ***** when there are unsaved changes.
+- **New** starts an empty BOM, **Load…** opens a saved one in its place (asking first if there are unsaved changes), **Save** (**Ctrl+S**) saves to the same file and **Save As…** to a new one. An unnamed BOM takes the name of the file you save it as. **Open Folder** opens the BOM's folder in your file manager. **Export TXT…** saves an easy-to-read text copy: the parts in lined-up columns, grouped by supplier with subtotals and the grand total.
+- BOM files are CSV and open in LibreOffice Calc or Excel - and in WinPartsFinder, which uses the same files. The BOM name and notes are at the bottom of the file. Unticked lines are saved as **DNP**.
+- LinuxPartsFinder always starts with an empty BOM - use **Load…** to carry on with a saved one. If the BOM has unsaved changes when you close LinuxPartsFinder, it asks whether to save them first.
+
+# SETTINGS
+- Paste your API keys in the boxes at the top. **Get a key** opens each supplier's sign-up page, **API Help** explains how to get each key, and **Show keys** shows them as text instead of dots.
+- **Prices - Single currency (if enabled):** choose the currency for the main window's **Prices in** tick box. The date of the saved exchange rates is shown next to it; **Update now** fetches today's, and **ECB rates webpage** opens the European Central Bank's exchange-rate page where they come from.
+- **Country and currency:** **DigiKey site** and **Currency** choose which DigiKey country's prices and stock you see (e.g. NZ and NZD). **Farnell store** picks the Farnell / element14 country store - its own stock, prices and currency (e.g. New Zealand, NZD); the same element14 key works for all of them. **TME country** and **Currency** do the same for TME. Pick from the lists or type a code. CPC (UK) and Newark (USA) are fixed. Mouser uses the country of the account your key was registered with.
+- **Search URLs** are used for website links. {0} is replaced by your search text. **Reset URLs** puts the built-in ones back. Double-click a URL to edit it.
+- **Add supplier** adds your own supplier as a website link: give it a name and its search URL with {0} where the search text goes, e.g. https://cpc.farnell.com/search?st={0}. **Delete supplier** removes it.
+- **Show part photos** turns the photo column on or off. **Theme** sets the colours for the whole app: **Light** (normal), **Soft grey** (light, with less glare), **Dark grey** (a softer slate-grey dark) or **Dark**. It previews straight away and applies everywhere when you click OK.
+- **Reset main window layout** puts the main window's size and position, the dividers, and the results column widths and order back to how they started. Like everything in Settings, it happens when you click **OK**; **Cancel** changes nothing.
+- Saving settings keeps your current results, supplier statuses and Load more position.
+
+# SUPPLIER NOTES
+- **Mouser** prices are in the currency of the account your key was registered with.
+- **DigiKey** shows the packaging with the smallest minimum order, usually Cut Tape, which suits repairs best.
+- **Farnell** prices are in the currency of the store chosen in Settings (GBP for the UK store), **CPC** in GBP and **Newark** in USD. They are searched one after the other to stay within element14's limit of 2 calls per second.
+- **TME** shows stock and prices for the country and currency chosen in Settings (GB and GBP to start with). Prices are those of your own tme.eu account (net, ex VAT). Each search uses a few TME calls (log in, search, prices).
+- **RS Components**, **Rapid** and **LCSC** have no public search API, so they appear as website links.
+- **AliExpress** also appears as a website link. Its only API is for registered affiliates, so it isn't built in.
+- Free API tiers allow roughly 1000 calls a day per supplier. Each search, and each Load more, is one call. Mouser also allows 30 calls a minute.
+
+# TROUBLESHOOTING
+- **HTTP 401** - the key or secret is wrong. Paste it again in Settings, checking for spaces at either end.
+- **HTTP 403** - the key isn't active yet, or (DigiKey) ProductInformation V4 isn't selected on your app.
+- **Timeout** - the supplier was slow to answer. Search again.
+- **Prices in GBP unticks itself, or says it couldn't get exchange rates** - check your internet connection. When new rates can't be fetched, the last saved ones are used (the status line says how old they are); the box only unticks if no rates have ever been saved. Tick it again, or use **Settings > Update now**.
+- **Parts found but the grid is empty** - something is hiding them, usually **In stock only**, **Active parts only** or a ticked **Status** filter for an old part. The status line says which; **Total parts = 5 (showing 0)** in the corner is the clue.
+- **Advanced search finds nothing** - check each box holds the right thing: **Manufacturer name contains** is the maker (e.g. C&K), not the part number or what the part is.
+- **The keyring asks for a password** - LinuxPartsFinder keeps your API keys in your desktop's keyring. Enter your login password to unlock it. If it asks you to choose a password for a new keyring, pick one you'll remember - it protects your saved keys.
+- If the main window ends up off-screen or a mess, use **Settings > Reset main window layout**.
+- Prices and stock come from the suppliers and can change quickly. Always check on the supplier's website before ordering.
+
+# GETTING HELP
+- Hover over any button, box or column header for a tip about what it does.
+- This Help window can stay open while you use LinuxPartsFinder. **Esc** closes it, and the About window too.
+- **About** shows the version, licence and credits, and has the **Donate via PayPal** button. The version number is also in the title bar.
+";
+
+    // API Help (opened from Settings): how to get each supplier's keys. Same markup as above.
+    private const string ApiHelpContent = @"
+# API KEYS - OVERVIEW
+Mouser, DigiKey, element14 (Farnell, CPC and Newark) and TME have free search APIs. Each person using LinuxPartsFinder needs their own keys - they're free, and take a few minutes to get.
+- Keep this window open beside Settings and paste each key into its box as you get it. **Get a key** next to each box opens that supplier's sign-up page.
+- **Check you're on the right site for your location.** The **Get a key** links go to each supplier's international site, which may not be the one for your country. If the supplier has a local site (look for its country or region selector), sign up there - the country of your account can decide the prices, currency and stock you see.
+- Tick **Show keys** to see what you've pasted instead of dots, and check there are no spaces at either end.
+- Click **OK** in Settings to save. You can do one supplier now and the rest later - suppliers without keys still appear as website links.
+- Keys are saved in your desktop's **keyring** (they show as LinuxPartsFinder in Passwords and Keys, or KWallet Manager on KDE). On a desktop without a keyring they're saved in a keys.json file that only your user account can open. They are never stored in the program, its settings file or its source code, and never sent anywhere except to that supplier. If the keyring asks for a password, enter your login password.
+
+# MOUSER
+- Click **Get a key** (the Mouser API Hub) and sign in or create a Mouser account.
+- Ask for a **Search API** key (not the Cart or Order API). It's emailed to you, and shown in your account under APIs.
+- Paste it into **Mouser Search API key**.
+- Prices are in the currency of the Mouser account the key was registered with. Mouser allows about 1000 searches a day and 30 a minute.
+
+# DIGIKEY
+- Click **Get a key** (developer.digikey.com) and sign in with your DigiKey account.
+- Create an **Organization** (any name), then inside it create a **Production App** - not a Sandbox app.
+- Give the app a name, tick **ProductInformation V4**, and set the **OAuth Callback** to https://localhost (it isn't used, but it must be filled in).
+- Open the app and copy its **Client ID** and **Client Secret** into the two DigiKey boxes.
+- **DigiKey site** and **Currency** choose which country's prices and stock you see, e.g. UK and GBP, or NZ and NZD.
+- **HTTP 403** usually means ProductInformation V4 isn't ticked on the app, or it's a Sandbox app.
+
+# ELEMENT14 (FARNELL, CPC AND NEWARK)
+- Click **Get a key** (partner.element14.com) and register.
+- Register an application. The free **Basic** tier is plenty. The key is shown in your account and emailed to you.
+- Paste it into **element14 API key**. One key covers **Farnell**, **CPC** and **Newark**.
+- **Farnell store** (below the key) chooses which country's Farnell / element14 store the Farnell supplier uses, e.g. **New Zealand - nz.element14.com (NZD)**. The same key works for every store.
+- element14 allows 2 searches a second, so LinuxPartsFinder searches Farnell, CPC and Newark one after the other.
+
+# TME
+TME takes two websites, so allow 10 minutes.
+- **1.** Click **Get a key** (developers.tme.eu), sign up, enter an application name and click **Create application**. That shows the **Application secret** - paste it into **TME Application secret**.
+- **2.** In another browser tab, log in to your normal shop account at **www.tme.eu** (not the developers site). Go to **User panel > Applications > Register new app** and copy the **temporary token** it shows.
+- **3.** Back on developers.tme.eu, paste that into **Temporary token**, choose Key purpose **To compare distributors offer**, and click **Generate new private key**.
+- **4.** Click **Show private keys** and copy the **Token** (about 50 characters) into **TME Token**.
+- Prices are those of your own tme.eu account (net, ex VAT). **TME country** and **Currency** (below the secret) choose the country and currency, GB and GBP to start with.
+- The **User panel** button on the developers site only reloads that site - the temporary token comes from the www.tme.eu shop account.
+
+# IF A KEY DOESN'T WORK
+- The supplier's **Status** on the main window says **Error** - hover over it to see why.
+- **HTTP 401** - the key or secret is wrong. Paste it again, checking for spaces at either end.
+- **HTTP 403** - the key isn't active yet (new keys can take a few minutes), or for DigiKey, ProductInformation V4 isn't ticked.
+- Free tiers allow roughly 1000 calls a day per supplier. Each search, and each Load more, is one call (TME uses a few).
+";
+
+    private readonly bool _apiHelp;
+
+    // Needed by the XAML loader / previewer (and the main Help).
+    public HelpWindow() : this(false)
+    {
+    }
+
+    /// <param name="apiHelp">True for the API key instructions (opened from Settings) instead of the main Help.</param>
+    public HelpWindow(bool apiHelp)
+    {
+        InitializeComponent();
+        _apiHelp = apiHelp;
+        if (apiHelp)
+        {
+            Title = "LinuxPartsFinder    API Help";
+            ToolTip.SetTip(btnOK, "Close API Help (Esc). You can keep it open while you type your keys into Settings.");
+        }
+        ShowContent();
+    }
+
+    private void ShowContent()
+    {
+        content.Children.Clear();
+        var lines = (_apiHelp ? ApiHelpContent : HelpContent).Replace("\r\n", "\n").Trim('\n').Split('\n');
+        foreach (var raw in lines)
+        {
+            var line = raw.TrimEnd();
+            if (line.StartsWith("# "))
+            {
+                content.Children.Add(new TextBlock
+                {
+                    Text = line.Substring(2),
+                    FontSize = 14,
+                    FontWeight = FontWeight.Bold,
+                    Margin = new Thickness(0, content.Children.Count > 0 ? 12 : 0, 0, 4)
+                });
+            }
+            else if (line.StartsWith("- "))
+            {
+                var bullet = new Grid { ColumnDefinitions = new ColumnDefinitions("16,*"), Margin = new Thickness(6, 1, 0, 1) };
+                bullet.Children.Add(new TextBlock { Text = "•" });
+                var text = RichText(line.Substring(2));
+                Grid.SetColumn(text, 1);
+                bullet.Children.Add(text);
+                content.Children.Add(bullet);
+            }
+            else if (line.Length == 0)
+            {
+                content.Children.Add(new Border { Height = 4 });
+            }
+            else
+            {
+                var text = RichText(line);
+                text.Margin = new Thickness(0, 1, 0, 1);
+                content.Children.Add(text);
+            }
+        }
+    }
+
+    /// <summary>One paragraph, with **bold** parts. Selectable, so text can be copied.</summary>
+    private static SelectableTextBlock RichText(string text)
+    {
+        var block = new SelectableTextBlock { TextWrapping = TextWrapping.Wrap };
+        var parts = text.Split("**");
+        for (var i = 0; i < parts.Length; i++)
+        {
+            if (parts[i].Length == 0) continue;
+            var run = new Run(parts[i]);
+            if (i % 2 == 1) run.FontWeight = FontWeight.Bold;
+            block.Inlines!.Add(run);
+        }
+        return block;
+    }
+
+    private void BtnOK_Click(object? sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+}

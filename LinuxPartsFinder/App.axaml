@@ -1,0 +1,165 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:LinuxPartsFinder"
+             x:Class="LinuxPartsFinder.App"
+             Name="LinuxPartsFinder"
+             RequestedThemeVariant="Light">
+             <!-- Light, Soft grey, Dark grey or Dark is set from the Theme setting when the main window opens (AppThemes). -->
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <!-- Results colours, as in WinPartsFinder (Theme.vb) -->
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="LinkTextBrush" Color="RoyalBlue" />
+                    <SolidColorBrush x:Key="MutedTextBrush" Color="#6D6D6D" />
+                    <SolidColorBrush x:Key="GoodTextBrush" Color="DarkGreen" />
+                    <!-- Prices converted to the "Prices in" currency, so they stand out as estimates -->
+                    <SolidColorBrush x:Key="ConvertedTextBrush" Color="#8000AA" />
+                    <!-- A package borrowed from another supplier's listing of the same part -->
+                    <SolidColorBrush x:Key="BorrowedTextBrush" Color="#BE5F00" />
+                    <!-- Grids: see-through in Light and Dark (as before); their own shade in the grey themes -->
+                    <SolidColorBrush x:Key="AppListBackground" Color="Transparent" />
+                    <!-- Text box outlines: a faint line, not Fluent's 60% black -->
+                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#C4C4C4" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#A0A0A0" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="LinkTextBrush" Color="#6EAFFF" />
+                    <SolidColorBrush x:Key="MutedTextBrush" Color="#969696" />
+                    <SolidColorBrush x:Key="GoodTextBrush" Color="#6ECD78" />
+                    <SolidColorBrush x:Key="ConvertedTextBrush" Color="#CD96FF" />
+                    <SolidColorBrush x:Key="BorrowedTextBrush" Color="#FFAA46" />
+                    <SolidColorBrush x:Key="AppListBackground" Color="Transparent" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#555555" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#777777" />
+                </ResourceDictionary>
+
+                <!-- Soft grey (built on Light): light greys instead of bright white, with text and colours a touch darker so
+                     they still stand out - WinPartsFinder's Theme.vb colours. These replace the Fluent theme's own brushes. -->
+                <ResourceDictionary x:Key="{x:Static local:AppThemes.SoftGrey}">
+                    <SolidColorBrush x:Key="LinkTextBrush" Color="#1C4EBE" />
+                    <SolidColorBrush x:Key="MutedTextBrush" Color="#696969" />
+                    <SolidColorBrush x:Key="GoodTextBrush" Color="#006900" />
+                    <SolidColorBrush x:Key="ConvertedTextBrush" Color="#7600A0" />
+                    <SolidColorBrush x:Key="BorrowedTextBrush" Color="#AA5500" />
+                    <SolidColorBrush x:Key="AppListBackground" Color="#E6E6E6" />
+                    <!-- window -->
+                    <SolidColorBrush x:Key="SystemControlBackgroundAltHighBrush" Color="#D6D6D6" />
+                    <SolidColorBrush x:Key="SystemControlPageBackgroundAltHighBrush" Color="#D6D6D6" />
+                    <SolidColorBrush x:Key="SystemRegionBrush" Color="#D6D6D6" />
+                    <SolidColorBrush x:Key="SystemControlForegroundBaseHighBrush" Color="#181818" />
+                    <!-- text boxes and drop-downs -->
+                    <SolidColorBrush x:Key="TextControlBackground" Color="#EEEEEE" />
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#F2F2F2" />
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#F4F4F4" />
+                    <SolidColorBrush x:Key="TextControlForeground" Color="#181818" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#B4B4B4" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#909090" />
+                    <SolidColorBrush x:Key="ComboBoxBackground" Color="#EEEEEE" />
+                    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#F2F2F2" />
+                    <SolidColorBrush x:Key="ComboBoxForeground" Color="#181818" />
+                    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#E6E6E6" />
+                    <!-- buttons, pop-ups, grid headers -->
+                    <SolidColorBrush x:Key="ButtonForeground" Color="#181818" />
+                    <SolidColorBrush x:Key="ToolTipBackground" Color="#E6E6E6" />
+                    <SolidColorBrush x:Key="ToolTipForeground" Color="#181818" />
+                    <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="#E6E6E6" />
+                    <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#E6E6E6" />
+                    <SolidColorBrush x:Key="DataGridColumnHeaderBackgroundBrush" Color="#C8C8C8" />
+                    <SolidColorBrush x:Key="DataGridColumnHeaderForegroundBrush" Color="#3A3A3A" />
+                    <SolidColorBrush x:Key="ScrollViewerScrollBarsSeparatorBackground" Color="#C8C8C8" />
+                </ResourceDictionary>
+
+                <!-- Dark grey (built on Dark): slate rather than black - easier on the eyes at night (Theme.vb colours) -->
+                <ResourceDictionary x:Key="{x:Static local:AppThemes.DarkGrey}">
+                    <SolidColorBrush x:Key="LinkTextBrush" Color="#7DB6FF" />
+                    <SolidColorBrush x:Key="MutedTextBrush" Color="#969DA8" />
+                    <SolidColorBrush x:Key="GoodTextBrush" Color="#7DD487" />
+                    <SolidColorBrush x:Key="ConvertedTextBrush" Color="#D4A5FF" />
+                    <SolidColorBrush x:Key="BorrowedTextBrush" Color="#FFB255" />
+                    <SolidColorBrush x:Key="AppListBackground" Color="#353A43" />
+                    <!-- window -->
+                    <SolidColorBrush x:Key="SystemControlBackgroundAltHighBrush" Color="#2C3038" />
+                    <SolidColorBrush x:Key="SystemControlPageBackgroundAltHighBrush" Color="#2C3038" />
+                    <SolidColorBrush x:Key="SystemRegionBrush" Color="#2C3038" />
+                    <SolidColorBrush x:Key="SystemControlForegroundBaseHighBrush" Color="#DEE2E8" />
+                    <!-- text boxes and drop-downs -->
+                    <SolidColorBrush x:Key="TextControlBackground" Color="#3D434D" />
+                    <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="#434A55" />
+                    <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#353A43" />
+                    <SolidColorBrush x:Key="TextControlForeground" Color="#DEE2E8" />
+                    <SolidColorBrush x:Key="TextControlBorderBrush" Color="#5C6370" />
+                    <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#7A828F" />
+                    <SolidColorBrush x:Key="ComboBoxBackground" Color="#3D434D" />
+                    <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="#434A55" />
+                    <SolidColorBrush x:Key="ComboBoxForeground" Color="#DEE2E8" />
+                    <SolidColorBrush x:Key="ComboBoxDropDownBackground" Color="#353A43" />
+                    <!-- buttons, pop-ups, grid headers -->
+                    <SolidColorBrush x:Key="ButtonForeground" Color="#DEE2E8" />
+                    <SolidColorBrush x:Key="ToolTipBackground" Color="#353A43" />
+                    <SolidColorBrush x:Key="ToolTipForeground" Color="#DEE2E8" />
+                    <SolidColorBrush x:Key="MenuFlyoutPresenterBackground" Color="#353A43" />
+                    <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#353A43" />
+                    <SolidColorBrush x:Key="DataGridColumnHeaderBackgroundBrush" Color="#424853" />
+                    <SolidColorBrush x:Key="DataGridColumnHeaderForegroundBrush" Color="#C8CDD5" />
+                    <SolidColorBrush x:Key="ScrollViewerScrollBarsSeparatorBackground" Color="#424853" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <!-- 12px text throughout, like WinPartsFinder's 9pt Segoe UI (Fluent's default is 14px) -->
+            <x:Double x:Key="ControlContentThemeFontSize">12</x:Double>
+            <!-- Typing in a text box: a 1px accent-coloured outline, not Fluent's 2px -->
+            <Thickness x:Key="TextControlBorderThemeThicknessFocused">1</Thickness>
+        </ResourceDictionary>
+    </Application.Resources>
+
+    <Application.Styles>
+        <!-- Compact: smaller controls, closer to the Windows Forms layout. (Soft grey and Dark grey's own colours are
+             in Application.Resources above - FluentTheme's own palettes only allow Light and Dark.) -->
+        <FluentTheme DensityStyle="Compact" />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+        <Style Selector="Window">
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="DataGridCell, DataGridColumnHeader">
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+        <!-- Grids take their theme's list shade (see-through in Light and Dark, as before) -->
+        <Style Selector="DataGrid">
+            <Setter Property="Background" Value="{DynamicResource AppListBackground}" />
+        </Style>
+        <!-- Slimmer column headers: the standard ones keep 32px free for the sort arrow even when a column isn't
+             sorted, which hides the header text of narrow columns like # and Hits. -->
+        <Style Selector="DataGridColumnHeader">
+            <Setter Property="MinHeight" Value="24" />
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="Template">
+                <ControlTemplate>
+                    <Panel Background="{TemplateBinding Background}">
+                        <Grid ColumnDefinitions="*,Auto" Margin="{TemplateBinding Padding}">
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            <Path Name="SortIcon" Grid.Column="1" IsVisible="False" Width="8" Height="5" Margin="4,0,0,0"
+                                  Stretch="Fill" VerticalAlignment="Center" Fill="{TemplateBinding Foreground}" />
+                        </Grid>
+                        <Rectangle Width="1" HorizontalAlignment="Right" Fill="{TemplateBinding SeparatorBrush}"
+                                   IsVisible="{TemplateBinding AreSeparatorsVisible}" />
+                        <!-- A line under this header only - off unless a grid turns it on (the results grid does) -->
+                        <Rectangle Name="HeaderLine" Height="1" VerticalAlignment="Bottom" IsVisible="False"
+                                   Fill="{TemplateBinding SeparatorBrush}" />
+                    </Panel>
+                </ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="DataGridColumnHeader:sortascending /template/ Path#SortIcon">
+            <Setter Property="IsVisible" Value="True" />
+            <Setter Property="Data" Value="M 0,5 L 4,0 L 8,5 Z" />
+        </Style>
+        <Style Selector="DataGridColumnHeader:sortdescending /template/ Path#SortIcon">
+            <Setter Property="IsVisible" Value="True" />
+            <Setter Property="Data" Value="M 0,0 L 8,0 L 4,5 Z" />
+        </Style>
+    </Application.Styles>
+</Application>
